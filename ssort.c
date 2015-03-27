@@ -22,7 +22,7 @@ static int compare(const void *a, const void *b)
 int main( int argc, char *argv[])
 {
   int rank, mpisize;
-  int i, N, s, tag=0;
+  int i, j, N, s, tag=0;
   int *vec;
   MPI_Status status;
 
@@ -96,15 +96,28 @@ int main( int argc, char *argv[])
   index[mpisize]=N;
   //index[i] is the starting address for chunk 
   //sending to rank i, chunk length is index[i+1]-index[i]
-  int flag=1;
+  for(i=0;i<mpisize;i++){
+    chunkLength[i]=0;
+  }
+
   for (i=0;i<N;i++){
-    if(vec[i]>splitters[flag]){
-      index[flag]=i;
-      flag++;
+    for (j=1;j<mpisize-1;j++){
+      if (vec[i]>splitters[j] && vec[i]<=splitters[j+1]){
+	chunkLength[j]++;
+      }
+    }
+    if(vec[i]<=splitters[1]){
+      chunkLength[0]++;
+    }
+    if(vec[i]>splitters[mpisize-1]){
+      chunkLength[mpisize-1]++;
     }
   }
-  for (i=0;i<mpisize;i++){
-    chunkLength[i]=index[i+1]-index[i];
+  for (i=1;i<mpisize;i++){
+    index[i]=index[i-1]+chunkLength[i-1];
+    if (chunkLength[i]<=0){
+	printf("chunkLength:%d\n",chunkLength[i]);
+      }
   }
   
   MPI_Alltoall(chunkLength,1,MPI_INT,recvLength,1,MPI_INT,MPI_COMM_WORLD);
