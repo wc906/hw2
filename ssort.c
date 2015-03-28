@@ -115,9 +115,6 @@ int main( int argc, char *argv[])
   }
   for (i=1;i<mpisize;i++){
     index[i]=index[i-1]+chunkLength[i-1];
-    if (chunkLength[i]<=0){
-	printf("chunkLength:%d\n",chunkLength[i]);
-      }
   }
   
   MPI_Alltoall(chunkLength,1,MPI_INT,recvLength,1,MPI_INT,MPI_COMM_WORLD);
