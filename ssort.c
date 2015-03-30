@@ -25,7 +25,7 @@ int main( int argc, char *argv[])
   int i, j, N, s, tag=0;
   int *vec;
   MPI_Status status;
-
+  double T1,T2;
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
@@ -36,7 +36,7 @@ int main( int argc, char *argv[])
 
   /* Number of random numbers per processor (this should be increased
    * for actual tests or could be made a passed in through the command line */
-  N = 100;
+  N = 1000;
   int *splitters;
   splitters = (int *)malloc((mpisize+1)*sizeof(int));
   vec = calloc(N, sizeof(int));
@@ -52,10 +52,11 @@ int main( int argc, char *argv[])
   /* sort locally */
   // qsort(vec, N, sizeof(int), compare);
   
- 
+  MPI_Barrier(MPI_COMM_WORLD);
+  T1=MPI_Wtime();
   /* randomly sample s entries from vector or select local splitters,
    * i.e., every N/P-th entry of the sorted vector */
-  s = 10;
+  s =(int)N/10;
   /* every processor communicates the selected entries
    * to the root processor */
   if (rank != 0){
@@ -149,7 +150,8 @@ int main( int argc, char *argv[])
   /* local sort */
   qsort(newVec,newLength,sizeof(int),compare);
   /* every processor writes its result to a file */
-
+  MPI_Barrier(MPI_COMM_WORLD);
+  T2=MPI_Wtime();
   FILE* fd = NULL;
   char filename[256];
   snprintf(filename, 256, "output%02d.txt", rank);
@@ -161,6 +163,7 @@ int main( int argc, char *argv[])
   }
   
   fprintf(fd,"rank %d, length of new vector: %d\n",rank,newLength);
+  fprintf(fd,"Time spent:%lf seconds\n",T2-T1);
   for(i=0;i<newLength;i++){
     fprintf(fd,"%d\n",newVec[i]);
   }
